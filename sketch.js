@@ -13,13 +13,8 @@ let collapsed = false;
 
 function setup() {
     createCanvas(W, W);
-    fillGrid();
     tileWidth = W / DIM;
-    x = rnd(DIM);
-    y = rnd(DIM);
-    startX = x;
-    startY = y;
-    grid[y][x].collapsed = true;
+    restart();
 }
 function restart(){
     fillGrid();
