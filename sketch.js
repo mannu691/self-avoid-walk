@@ -1,5 +1,5 @@
 const W = 600;
-const DIM = 10;
+const DIM = 6;
 const size = 3;
 let tileWidth;
 let grid = [];
@@ -9,14 +9,12 @@ let x;
 let y;
 let collapsed = false;
 
-
-
 function setup() {
     createCanvas(W, W);
     tileWidth = W / DIM;
     restart();
 }
-function restart(){
+function restart() {
     fillGrid();
     x = rnd(DIM);
     y = rnd(DIM);
@@ -34,9 +32,15 @@ function fillGrid() {
     }
 }
 
+function mouseClicked() {
+    // redraw();
+    if (mouseX >= W || mouseY >= W) {
+        redraw();
+        return;
+    }
+    console.log(grid[Math.floor(mouseY / tileWidth)][Math.floor(mouseX / tileWidth)]);
+    // prevent default
 
-function mousePressed() {
-    redraw();
 }
 function draw() {
     background(0);
@@ -45,11 +49,11 @@ function draw() {
             const cell = grid[i][j];
             if (cell.collapsed) {
                 if (x == j && y == i) {
-                    strokeWeight(tileWidth/size*2);
+                    strokeWeight(tileWidth / size * 2);
                     stroke(225);
                     point(tileWidth * j + tileWidth / 2, tileWidth * i + tileWidth / 2);
                 }
-                strokeWeight(tileWidth/size);
+                strokeWeight(tileWidth / size);
                 stroke(255);
                 const cenX = tileWidth * j + tileWidth / 2;
                 const cenY = tileWidth * i + tileWidth / 2;
@@ -67,11 +71,18 @@ function draw() {
                     line(cenX, cenY, tileWidth * j, cenY);
                 }
             }
+            else {
+                fill(0);
+                stroke(255);
+                strokeWeight(1);
+                rect(tileWidth * j, tileWidth * i, tileWidth, tileWidth);
+
+            }
         }
     }
-    if(collapsed){
+    if (collapsed) {
         noLoop();
-        
+
     }
     if (!collapse()) {
         restart();
@@ -79,29 +90,61 @@ function draw() {
     // noLoop();
 }
 function collapse() {
+    if (isCompleted()) return true;
     const available = [];
-    const current = grid[y][x];
-    if (y > 0 && !grid[y - 1][x].collapsed) {
+    let current = grid[y][x];
+    if (y > 0 && grid[y - 1][x].valid() && !current.tried.includes(0)) {
+
         //TOP
         available.push(0);
     }
-    if (x < DIM - 1 && !grid[y][x + 1].collapsed) {
+    if (x < DIM - 1 && grid[y][x + 1].valid() && !current.tried.includes(1)) {
         //RIGHT
         available.push(1);
     }
-    if (y < DIM - 1 && !grid[y + 1][x].collapsed) {
+    if (y < DIM - 1 && grid[y + 1][x].valid() && !current.tried.includes(2)) {
         //DOWN
         available.push(2);
     }
-    if (x > 0 && !grid[y][x - 1].collapsed) {
+    if (x > 0 && grid[y][x - 1].valid() && !current.tried.includes(3)) {
         //LEFT
         available.push(3);
     }
-    if(grid.every((r)=>r.every((c)=>c.collapsed))){
-        collapsed = true;
+    if (available.length < 1) {
+
+        current.collapsed = false;
+        current.tried=[];
+        // current.visited = true;
+        if (current.top) {
+            y -= 1;
+            current = grid[y][x];
+            current.bottom = false;
+            current.tried.push(2);
+        }
+        else if (current.right) {
+            x += 1;
+            current = grid[y][x];
+            current.left = false;
+            current.tried.push(3);
+        }
+        else if (current.bottom) {
+            y += 1;
+            current = grid[y][x];
+            current.top = false;
+            current.tried.push(0);
+        }
+        else if (current.left) {
+            x -= 1;
+            current = grid[y][x];
+            current.right = false;
+            current.tried.push(1);
+        } else {
+            console.log("Fuck");
+            // return false;
+        }
+        // console.log("current X : " + x + " Y : " + y);
         return true;
     }
-    if (available.length < 1) return false;
     const dir = random(available);
     const cell = new Cell(true);
     switch (dir) {
@@ -126,13 +169,16 @@ function collapse() {
             cell.right = true;
             break;
         default:
-            break;
+            return true;
     }
-
     grid[y][x] = cell;
     return true;
 }
 
+function isCompleted() {
+    collapsed = grid.every((r) => r.every((c) => c.collapsed));
+    return collapsed;
+}
 function rnd(max) {
     return Math.floor(Math.random() * max);
 }
